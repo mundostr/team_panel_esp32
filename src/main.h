@@ -133,6 +133,8 @@ void init_interrupts() {
 }
 
 void init_display() {
+    vspi = new SPIClass(VSPI);
+    vspi->begin();
     ledcSetup(0, DISPLAY_REFRESH, 8);
     ledcAttachPin(PIN_DMD_nOE, 0);
     ledcWrite(0, DISPLAY_BRIGHTNESS);
@@ -300,6 +302,7 @@ void draw_stopwatch_warmup() {
 
         if (ss == 0) {
             dmd.drawString(SWATCH_CHAR_4, 5, "3", 1, GRAPHICS_NORMAL);
+            dmd.drawString(SWATCH_CHAR_5, 5, "0", 1, GRAPHICS_NORMAL);
 
             warmup_started = false;
             last30_started = true;
