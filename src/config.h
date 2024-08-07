@@ -38,7 +38,7 @@ https://github.com/greiman/DigitalIO
 #define LED_MATRIX_COLS 4
 #define POSX_LAPS 6
 #define POSX_VBAR 45
-#define DISPLAY_BRIGHTNESS 180 // 0 a 255
+#define DISPLAY_BRIGHTNESS 32 // 0 a 255
 #define DISPLAY_REFRESH 2500
 #define LAPS_DEBOUNCE_TIME 50
 #define STOPWATCH_MINUTES_LIMIT 15
