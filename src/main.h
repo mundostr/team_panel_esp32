@@ -1,7 +1,8 @@
 #pragma once
 
+
 #include "config.h"
-#include "driver/ledc.h"
+
 
 void IRAM_ATTR updateDisplay() {
     dmd.scanDisplayBySPI();
@@ -13,7 +14,6 @@ void IRAM_ATTR updateWarmup() {
     update_display_stopwatch = true;
 }
 
-// void increment_laps();
 void IRAM_ATTR updateStopwatch() {
     ts++;
 
@@ -21,7 +21,6 @@ void IRAM_ATTR updateStopwatch() {
         ss++;
         ts = 0;
         if (ss > 59) { ss = 0; mm++; }
-        // increment_laps();
     }
     
     update_display_stopwatch = true;
@@ -65,36 +64,6 @@ void update_fault_lights() {
     }
 }
 
-void set_brightness(boolean saveToPrefs = false) {
-    if (config.display_brightness < 0) config.display_brightness = 0;
-    if (config.display_brightness > 255) config.display_brightness = DISPLAY_BRIGHTNESS;
-
-    ledc_timer_config_t ledc_timer = {
-        .speed_mode       = LEDC_HIGH_SPEED_MODE,
-        .duty_resolution  = LEDC_TIMER_8_BIT,
-        .timer_num        = LEDC_TIMER_0,
-        .freq_hz          = 1667,
-        .clk_cfg          = LEDC_USE_REF_TICK
-    };
-    ledc_timer_config(&ledc_timer);
-
-    ledc_channel_config_t ledc_channel = {
-        .gpio_num       = PIN_DMD_nOE,
-        .speed_mode     = LEDC_HIGH_SPEED_MODE,
-        .channel        = LEDC_CHANNEL_0,
-        .intr_type      = LEDC_INTR_DISABLE,
-        .timer_sel      = LEDC_TIMER_0,
-        .duty           = config.display_brightness,
-        .hpoint         = 0
-    };
-    ledc_channel_config(&ledc_channel);
-
-    /* if (saveToPrefs) {
-        preferences.begin("app", false);
-        preferences.putUInt("br", config.display_brightness);
-        preferences.end();
-    } */
-}
 
 void set_display_static() {
     dmd.clearScreen(true);
@@ -119,17 +88,15 @@ void set_display_static() {
     dmd.drawLine(POSX_VBAR + 1, 0, POSX_VBAR + 1, 31, GRAPHICS_NORMAL);
 }
 
-void init_config() {
-    /* preferences.begin("app", false);
-    config.display_brightness = preferences.getUInt("br") || DISPLAY_BRIGHTNESS;
-    preferences.end();
-    Serial.println(config.display_brightness); */
+void init_pins() {
+    pinMode(laps_button.pin, INPUT);
+    digitalWrite(laps_button.pin, 0);
 }
 
 void init_radio() {
-    /* hspi = new SPIClass(HSPI);
-    hspi->begin(HSPI_SCLK_PIN, HSPI_MISO_PIN, HSPI_MOSI_PIN, HSPI_CE_PIN); //SCLK = 14, MISO = 12, MOSI = 13, SS = 15
-    pinMode(HSPI_CE_PIN, OUTPUT); */
+    // hspi = new SPIClass(HSPI);
+    // hspi->begin(HSPI_SCLK_PIN, HSPI_MISO_PIN, HSPI_MOSI_PIN, HSPI_CE_PIN); //SCLK = 14, MISO = 12, MOSI = 13, SS = 15
+    // pinMode(HSPI_CE_PIN, OUTPUT);
 
     if (!radio.begin()) {
         #ifdef DEBUG
@@ -153,22 +120,22 @@ void init_radio() {
 void init_interrupts() {
     display_timer = timerBegin(0, 80, true);
     timerAttachInterrupt(display_timer, &updateDisplay, true);
-    timerAlarmWrite(display_timer, 1000, true);
+    timerAlarmWrite(display_timer, DISPLAY_REFRESH, true);
     timerAlarmEnable(display_timer);
-
+    
     warmup_timer = timerBegin(1, 80, true);
     timerAttachInterrupt(warmup_timer, &updateWarmup, true);
-    timerAlarmWrite(warmup_timer, 1000000, true); // cada 1 seg
+    timerAlarmWrite(warmup_timer, 1000000, true);
 
     stopwatch_timer = timerBegin(2, 80, true);
     timerAttachInterrupt(stopwatch_timer, &updateStopwatch, true);
-    timerAlarmWrite(stopwatch_timer, 100000, true); // cada 0.1 seg
+    timerAlarmWrite(stopwatch_timer, 100000, true);
 }
 
 void init_display() {
-    vspi = new SPIClass(VSPI);
-    vspi->begin();
-    set_brightness(false);
+    ledcSetup(0, DISPLAY_REFRESH, 8);
+    ledcAttachPin(PIN_DMD_nOE, 0);
+    ledcWrite(0, DISPLAY_BRIGHTNESS);
     set_display_static();
 }
 
@@ -200,7 +167,8 @@ void start_race() {
 
 void verify_payload_data(char *data) {
     unsigned int command = 99;
-    for (unsigned int c = 0; c < 9; c++) if (strcmp(data, COMMANDS_ARRAY[c]) == 0) { command = c; }
+
+    for (unsigned int c = 0; c < 7; c++) if (strcmp(data, COMMANDS_ARRAY[c]) == 0) { command = c; }
 
     #ifdef DEBUG
     Serial.println(COMMANDS_ARRAY[command]);
@@ -278,20 +246,6 @@ void verify_payload_data(char *data) {
             laps_limit = 200;
             break;
         }
-
-        // BRP (Más brillo / More brigthness)
-        case 7: {
-            config.display_brightness *= 2;
-            set_brightness(true);
-            break;
-        }
-
-        // BRM (Menos brillo / Less brigthness)
-        case 8: {
-            config.display_brightness /= 2;
-            set_brightness(true);
-            break;
-        }
         
         default: {}
     }
@@ -336,14 +290,8 @@ void draw_stopwatch_warmup() {
 
     if (ss >= 60) {
         snprintf(display_stopwatch_buffer, 8, "01:%02d.0", ss - 60);
-        #ifdef DEBUG
-        Serial.printf("01:%02d.0\n", ss - 60);
-        #endif
     } else {
         snprintf(display_stopwatch_buffer, 8, "00:%02d.0", ss);
-        #ifdef DEBUG
-        Serial.printf("00:%02d.0\n", ss);
-        #endif
             
         if (ss == 59) {
             dmd.drawFilledBox(SWATCH_CHAR_2, 5, SWATCH_CHAR_3 - 1, 29, GRAPHICS_INVERSE);
@@ -352,7 +300,6 @@ void draw_stopwatch_warmup() {
 
         if (ss == 0) {
             dmd.drawString(SWATCH_CHAR_4, 5, "3", 1, GRAPHICS_NORMAL);
-            dmd.drawString(SWATCH_CHAR_5, 5, "0", 1, GRAPHICS_NORMAL);
 
             warmup_started = false;
             last30_started = true;
@@ -383,10 +330,6 @@ void draw_stopwatch_last30() {
 
     snprintf(display_stopwatch_buffer, 8, "00:%02d.0", ss);
 
-    #ifdef DEBUG
-    Serial.printf("00:%02d.0\n", ss);
-    #endif
-
     if (ten != prevStopSecTen) {
         dmd.drawFilledBox(SWATCH_CHAR_4, 5, SWATCH_CHAR_5 - 1, 29, GRAPHICS_INVERSE);
         dmd.drawString(SWATCH_CHAR_4, 5, &display_stopwatch_buffer[3], 1, GRAPHICS_NORMAL);
@@ -400,15 +343,8 @@ void draw_stopwatch_last30() {
     }
 
     if (ss == 0) {
-        last30_started = false;
-        prevStopSecUnit = 0;
-        prevStopSecTen = 0;
         if (timerAlarmEnabled(warmup_timer)) timerAlarmDisable(warmup_timer);
-        if (STOPWATCH_AUTOSTART) {
-            start_race();
-        } else {
-            set_display_static();
-        }
+        if (STOPWATCH_AUTOSTART) start_race();
     }
 }
 
@@ -422,9 +358,6 @@ void draw_stopwatch_race() {
     int secUnit = ss % 10;
 
     snprintf(display_stopwatch_buffer, 8, "%02d:%02d.%d", mm, ss, ts);
-    #ifdef DEBUG
-    Serial.printf("%02d:%02d.%d\n", mm, ss, ts);
-    #endif
 
     if (mm >= 10 && minTen != prevStopMinTen) {
         if (mm == 10) {
@@ -493,6 +426,7 @@ void loop_display() {
 void increment_laps() {
     if (laps_counter < laps_limit) {
         laps_counter++;
+        
         update_display_laps = true;
         
         if (laps_counter == laps_limit) {
@@ -522,10 +456,6 @@ void loop_radio() {
     if (radio.available() > 0) {
         radio.read(&payload, sizeof(payload));
         verify_payload_data(payload.data);
-        
-        // static char outputBuf[50];
-        // snprintf(outputBuf, sizeof(outputBuf), "ID: %s, comando: %s", payload.id, payload.data);
-        // Serial.println(outputBuf);
     }
 
     if (start_signal_just_received && millis() - start_delay_timer >= START_SIGNAL_DELAY) {
@@ -533,4 +463,8 @@ void loop_radio() {
         start_delay_timer = millis();
         start_race();
     }
+        
+    // static char outputBuf[50];
+    // snprintf(outputBuf, sizeof(outputBuf), "ID: %s, comando: %s", payload.id, payload.data);
+    // Serial.println(outputBuf);
 }

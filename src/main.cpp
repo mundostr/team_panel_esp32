@@ -1,25 +1,27 @@
 #include "config.h"
 #include "main.h"
 
+
 void setup() {
     #ifdef DEBUG
     Serial.begin(SERIAL_DEBUG_BAUDRATE);
     #endif
 
+    delay(3000);
+
+    init_pins();
     init_interrupts();
     init_display();
     init_radio();
 
-    delay(500);
+    #ifdef DEBUG
+    Serial.println("SISTEMA INICIADO");
+    #endif
 }
 
-void loop() {
-    loop_display();
-    
-    if (millis() - loop_timer >= 10) {
-        loop_radio();
-        loop_laps_button();
 
-        loop_timer = millis();
-    }
+void loop() {
+    loop_radio();
+    loop_display();
+    loop_laps_button();
 }
