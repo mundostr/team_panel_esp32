@@ -19,15 +19,14 @@ jobs:
 
     - name: Rename main.cpp to <repo_name>.ino
       run: |
-        repo_name=$(basename `git rev-parse --show-toplevel`)
-        mv src_arduino_ide/main.cpp src_arduino_ide/${repo_name}.ino
+        mv src_arduino_ide/main.cpp src_arduino_ide/$(basename `git rev-parse --show-toplevel`).ino
 
     - name: Zip src folder
       run: |
-        zip -r ${repo_name}.zip src_arduino_ide
+        zip -r $(basename `git rev-parse --show-toplevel`).zip src_arduino_ide
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${repo_name}-zip
-        path: ${repo_name}.zip
+        name: $(basename `git rev-parse --show-toplevel`)-zip
+        path: $(basename `git rev-parse --show-toplevel`).zip
