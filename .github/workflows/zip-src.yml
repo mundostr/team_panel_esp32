@@ -16,18 +16,3 @@ jobs:
     - name: Copy folder
       run: |
             cp src src_arduino_ide
-
-    - name: Rename main.cpp to <repo_name>.ino
-      run: |
-        repo_name=$(basename `git rev-parse --show-toplevel`)
-        mv src_arduino_ide/main.cpp src_arduino_ide/${repo_name}.ino
-
-    - name: Zip src folder
-      run: |
-        zip -r ${repo_name}.zip src_arduino_ide
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${repo_name}-zip
-        path: ${repo_name}.zip
