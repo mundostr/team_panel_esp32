@@ -15,4 +15,4 @@ jobs:
 
     - name: Copy folder
       run: |
-            cp src src_arduino_ide
+            cp -r src src_arduino_ide
