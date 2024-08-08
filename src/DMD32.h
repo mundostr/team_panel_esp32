@@ -53,7 +53,7 @@ LED Panel Layout in RAM
 #define PIN_DMD_B		    21		// D21
 #define PIN_DMD_CLK		    18		// D18_SCK  is SPI Clock if SPI is used
 #define PIN_DMD_SCLK		2		// D02
-#define PIN_DMD_R_DATA      23	// D23_MOSI is SPI Master Out if SPI is used
+#define PIN_DMD_R_DATA      23	    // D23_MOSI is SPI Master Out if SPI is used
 //Define this chip select pin that the Ethernet W5100 IC or other SPI device uses
 //if it is in use during a DMD scan request then scanDisplayBySPI() will exit without conflict! (and skip that scan)
 #define PIN_OTHER_SPI_nCS   SS
@@ -194,7 +194,7 @@ class DMD
     
     //uninitalised pointer to SPI object
 	SPIClass * vspi = NULL;
-	static const int spiClk = 4 * 1000000; // 4 MHz SPI clock
+	static const int spiClk = 10 * 1000000; // 4 MHz SPI clock
 };
 
 #endif /* DMD_H_ */

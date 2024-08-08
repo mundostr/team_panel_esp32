@@ -30,7 +30,7 @@ https://github.com/greiman/DigitalIO
 #define HSPI_CE_PIN 26
 #define LAP_COUNTER_INTERRUPT_PIN 4
 
-#define DEBUG
+// #define DEBUG
 #define SERIAL_DEBUG_BAUDRATE 115200
 #define RADIO_COMMAND_LENGTH 3
 #define NRF_CHANNEL 108
@@ -38,12 +38,13 @@ https://github.com/greiman/DigitalIO
 #define LED_MATRIX_COLS 4
 #define POSX_LAPS 6
 #define POSX_VBAR 45
-#define DISPLAY_BRIGHTNESS 32 // 0 a 255
-#define DISPLAY_REFRESH 2500
+#define DISPLAY_BRIGHTNESS 180 // 0 a 255
+#define DISPLAY_REFRESH_PERIOD_US 1000
+#define PWM_FREQ 1667
 #define LAPS_DEBOUNCE_TIME 50
 #define STOPWATCH_MINUTES_LIMIT 15
 #define STOPWATCH_AUTOSTART true
-#define START_SIGNAL_DELAY 200
+#define START_SIGNAL_DELAY 210
 
 #define CHAR_WIDTH 13
 #define POINT_WIDTH 5
@@ -89,4 +90,5 @@ bool last30_started = false;
 bool update_display_laps = false;
 bool start_signal_just_received = false;
 
+uint32_t timer_loop = 0;
 uint32_t start_delay_timer = 0;

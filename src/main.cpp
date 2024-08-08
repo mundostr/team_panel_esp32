@@ -7,12 +7,12 @@ void setup() {
     Serial.begin(SERIAL_DEBUG_BAUDRATE);
     #endif
 
-    delay(3000);
-
     init_pins();
-    init_interrupts();
     init_display();
     init_radio();
+    init_interrupts();
+
+    delay(1000);
 
     #ifdef DEBUG
     Serial.println("SISTEMA INICIADO");
@@ -21,7 +21,11 @@ void setup() {
 
 
 void loop() {
-    loop_radio();
-    loop_display();
-    loop_laps_button();
+    if (millis() - timer_loop >= 5) {
+        loop_display();
+        loop_radio();
+        loop_laps_button();
+
+        timer_loop = millis();
+    }
 }

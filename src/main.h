@@ -120,7 +120,7 @@ void init_radio() {
 void init_interrupts() {
     display_timer = timerBegin(0, 80, true);
     timerAttachInterrupt(display_timer, &updateDisplay, true);
-    timerAlarmWrite(display_timer, DISPLAY_REFRESH, true);
+    timerAlarmWrite(display_timer, DISPLAY_REFRESH_PERIOD_US, true);
     timerAlarmEnable(display_timer);
     
     warmup_timer = timerBegin(1, 80, true);
@@ -135,7 +135,7 @@ void init_interrupts() {
 void init_display() {
     vspi = new SPIClass(VSPI);
     vspi->begin();
-    ledcSetup(0, DISPLAY_REFRESH, 8);
+    ledcSetup(0, PWM_FREQ, 8);
     ledcAttachPin(PIN_DMD_nOE, 0);
     ledcWrite(0, DISPLAY_BRIGHTNESS);
     set_display_static();
@@ -345,9 +345,12 @@ void draw_stopwatch_last30() {
         prevStopSecUnit = unit;
     }
 
-    if (ss == 0) {
-        if (timerAlarmEnabled(warmup_timer)) timerAlarmDisable(warmup_timer);
-        if (STOPWATCH_AUTOSTART) start_race();
+    if (ss == 0 && timerAlarmEnabled(warmup_timer)) {
+        timerAlarmDisable(warmup_timer);
+        if (STOPWATCH_AUTOSTART) {
+            start_signal_just_received = true;
+            start_delay_timer = millis();
+        }
     }
 }
 
